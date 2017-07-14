@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: a6b31cc61057bb145844c9fec9adf2b3
+timeCreated: 1499893755
+licenseType: Free
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: ROCK-ON Demo
+  fontNames:
+  - ROCK-ON Demo
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
