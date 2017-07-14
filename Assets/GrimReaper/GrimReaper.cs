@@ -24,7 +24,7 @@ public class GrimReaper : MonoBehaviour {
     }
 
     public void Running(bool running) {
-        targetPosition = new Vector3(transform.position.x + 15, transform.position.y, transform.position.x);
+        targetPosition = new Vector3(transform.position.x + 9, transform.position.y, transform.position.x);
         this.running = running;
     }
 }
