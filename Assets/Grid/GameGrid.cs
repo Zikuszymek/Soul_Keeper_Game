@@ -5,38 +5,32 @@ using UnityEngine;
 
 public class GameGrid : MonoBehaviour {
 
-    public const int DROP_SOULS = 0, SWAP_BACK = 1, MIX = 2,
-        MOVE_ALLOWED = 3, SOULS_SWAPED = 4, DESTROY_SOULS = 5;
+    public const int DROP_SOULS = 0, SWAP_BACK = 1, MIX = 2, MOVE_ALLOWED = 3, SOULS_SWAPED = 4, DESTROY_SOULS = 5;
 
     public static int currentGameSatus = DROP_SOULS;
 
     public int width;
     public int height;
     public GameObject gridPrefab;
-    public Sprite[] spriteArray;
-    public GameObject soulPrefab;
-    public Text movesText;
-    public Text scoresText;
-    public AudioClip error;
 
     private GameObject[][] soulsGrid;
     private GridManager gridManager;
     private List<GameObject> soulListToDestroy;
-    private List<GameObject> soulsCreated;
     private AudioSource audioSource;
-    private int moves = 0;
-    private int scores = 0;
+    private MovesAndScores movesAndScores;
+    private SoulCreator soulCreator;
 
     void Start() {
+        soulCreator = FindObjectOfType<SoulCreator>();
         audioSource = GetComponent<AudioSource>();
+        movesAndScores = FindObjectOfType<MovesAndScores>();
         soulListToDestroy = new List<GameObject>();
-        soulsCreated = new List<GameObject>();
         soulsGrid = new GameObject[width][];
         InstantiateAllGrids();
         CenterTheGrid();
-        gridManager = new GridManager(soulsGrid, this);
-        gridManager.DragSoulsDown();
-        currentGameSatus = DROP_SOULS;
+        gridManager = new GridManager(soulsGrid, soulCreator);
+        gridManager.GetStartGrid();
+        ChangeStatus(DROP_SOULS);
     }
 
     private void Update() {
@@ -54,7 +48,7 @@ public class GameGrid : MonoBehaviour {
 
             case MIX:
                 if (!gridManager.DoesAnySoulMove()) {
-                    CheckForMaches();
+                    DestroyMaches();
                 }
                 break;
 
@@ -69,35 +63,24 @@ public class GameGrid : MonoBehaviour {
 
             case SWAP_BACK:
                 if (!gridManager.DoesAnySoulMove()) {
-                    GameGrid.currentGameSatus = MOVE_ALLOWED;
+                    ChangeStatus(MOVE_ALLOWED);
                 }
                 break;
         }
     }
 
-    public void InstantiateSoulOnPosition(int x, int y) {
-        GameObject parent = soulsGrid[x][y];
-        GameObject soulObject = Instantiate(soulPrefab, parent.transform.position, Quaternion.identity);
-        InitRandomSoul(soulObject);
-        soulObject.transform.parent = parent.transform;
-    }
-
-    public void SwapSouls(int sapType) {
+    public void SwapSouls(int swapType) {
         Swap(GridSquare.selectedSoul1, GridSquare.selectedSoul2);
-        GameGrid.currentGameSatus = sapType;
+        ChangeStatus(swapType);
     }
 
     public void ChangeStatus(int currentGameSatus) {
+        gridManager.ReflectTheGridOnArray();
         GameGrid.currentGameSatus = currentGameSatus;
     }
 
     public GameObject getGridSquareAt(float x, float y) {
         return soulsGrid[(int)x][(int)y];
-    }
-
-    public void UpdateScores(int scores) {
-        this.scores += scores;
-        scoresText.text = this.scores.ToString();
     }
 
     private void InstantiateAllGrids() {
@@ -118,40 +101,39 @@ public class GameGrid : MonoBehaviour {
 
     private void DragSoulsDown() {
         gridManager.DragSoulsDown();
-        currentGameSatus = DROP_SOULS;
+        ChangeStatus(DROP_SOULS);
         soulListToDestroy = new List<GameObject>();
     }
 
     private void CheckSoulsAfterSwap() {
-        soulListToDestroy = gridManager.DestroyALlMachingSouls();
+        soulListToDestroy = gridManager.GetAllMachingSouls();
         if (CheckSoulsToDestroy() == 0) {
             PlayError();
             SwapSouls(SWAP_BACK);
         } else {
-            moves++;
-            movesText.text = moves.ToString();
+            movesAndScores.UpdateMoves();
             DestroyMaches();
         }
     }
 
     private void DestroyMaches() {
-        soulListToDestroy = gridManager.DestroyALlMachingSouls();
+        soulListToDestroy = gridManager.GetAllMachingSouls();
         if (soulListToDestroy.Count > 0) {
-            for (int i = 0 ; i < soulListToDestroy.Count; i++) {
+            for (int i = 0; i < soulListToDestroy.Count; i++) {
                 soulListToDestroy[i].GetComponent<Soul>().StartDestroyAnimations(i);
             }
-            GameGrid.currentGameSatus = DESTROY_SOULS;
+            ChangeStatus(DESTROY_SOULS);
         } else {
-            CheckForMaches();
+            CheckForMoves();
         }
     }
 
-    private void CheckForMaches() {
+    private void CheckForMoves() {
         if (gridManager.DoesAreAnyMovesInGame()) {
-            currentGameSatus = MOVE_ALLOWED;
+            ChangeStatus(MOVE_ALLOWED);
         } else {
             gridManager.MixTheArray();
-            currentGameSatus = MIX;
+            ChangeStatus(MIX);
         }
     }
 
@@ -167,13 +149,6 @@ public class GameGrid : MonoBehaviour {
 
     private void PlayError() {
         audioSource.Play();
-    }
-
-    private void InitRandomSoul(GameObject soulObject) {
-        int randomSoul = Random.Range(0, spriteArray.Length);
-        Soul soul = soulObject.GetComponent<Soul>();
-        soul.setSoulType(randomSoul);
-        soul.setSprite(spriteArray[randomSoul]);
     }
 
     private void Swap(GameObject soulOne, GameObject soulTwo) {

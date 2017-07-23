@@ -74,7 +74,9 @@ public class GridSquare : MonoBehaviour {
         return gameGrid.getGridSquareAt(xSign, ySign);
     }
 
-    public void EmpirParticles() {
+    public void EmpitParticles() {
+        particleSystem.randomSeed = (uint)Random.Range(0, 9999999);
+        particleSystem.Simulate(0, false, true);
         particleSystem.Emit(10);
     }
 

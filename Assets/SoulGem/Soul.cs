@@ -68,7 +68,7 @@ public class Soul : MonoBehaviour {
     }
 
     private void TriggerDestroyAnimations() {
-        SendMessageUpwards("EmpirParticles");
+        SendMessageUpwards("EmpitParticles");
         InvokeScore();
         int randomSong = Random.Range(0, audioClips.Length);
         audioSource.clip = audioClips[randomSong];

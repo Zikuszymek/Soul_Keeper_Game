@@ -12,12 +12,10 @@ public class Score : MonoBehaviour {
     private GameObject scores;
     private bool prepareToBeDestroyed = false;
     private Animator animator;
-    private GameGrid gameGrid;
-    //private Camera camera;
+    private MovesAndScores movesAndScores;
 
 	void Start () {
-        //camera = FindObjectOfType<Camera>();
-        gameGrid = FindObjectOfType<GameGrid>();
+        movesAndScores = FindObjectOfType<MovesAndScores>();
         animator = GetComponent<Animator>();
         targetPosition = transform.position;
         scores = GameObject.FindGameObjectWithTag("Scores");
@@ -37,7 +35,7 @@ public class Score : MonoBehaviour {
 
     }
     public void UpdateScores() {
-        gameGrid.UpdateScores(10);
+        movesAndScores.UpdateScores(10);
     }
     
     public void Destroy() {

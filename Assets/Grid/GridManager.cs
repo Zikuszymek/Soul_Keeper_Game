@@ -3,98 +3,46 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class GridManager {
+
     public readonly static int NO_SOUL = -1;
 
     private GameObject[][] soulsGrid;
-    private GameGrid gameGrid;
+    private ReflectedArray reflectedArray;
+    private SoulCreator soulCreator;
     private int width;
     private int height;
 
     delegate void ActionsInLoop();
 
-    public GridManager(GameObject[][] soulsGrid, GameGrid gameGrid) {
+    public GridManager(GameObject[][] soulsGrid, SoulCreator soulCreator) {
         this.soulsGrid = soulsGrid;
-        this.gameGrid = gameGrid;
+        this.soulCreator = soulCreator;
         width = soulsGrid.Length;
         height = soulsGrid[0].Length;
+        this.reflectedArray = new ReflectedArray(instantiateArray(), soulCreator.spriteArray.Length);
+        reflectedArray.CreateFirstSoulsGrid();
     }
 
-    /*SEARCH FOR MOVES*/
+    public void ReflectTheGridOnArray() {
+        reflectedArray.reflectTheGridOnArray(reflectCurrentGrid());
+    }
 
-    public bool DoesAreAnyMovesInGame() {
-        //Debug.Log("Checking moves");
+    private int[][] reflectCurrentGrid() {
+        int[][] reflectedArray = instantiateArray();
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                int thisSoulType = GetSoulTypeOnPosition(x, y);
-                if(CompareNextTwoGridsHorizontal(x, y, thisSoulType) || CompareSideGridsHorizontal(x, y, thisSoulType)
-                    || CompareNextTwoGridsVertical(x, y, thisSoulType) || CompareSideGridsVertical(x, y, thisSoulType)) {
-                    return true;
-                }
+                reflectedArray[x][y] = GetSoulTypeOnPosition(x, y);
             }
         }
-        return false;
+        return reflectedArray;
     }
 
-    private bool CompareSideGridsHorizontal(int x, int y, int soulType) {
-        if (x + 2 < width) {
-            int soulTypeXPlus2 = GetSoulTypeOnPosition(x + 2, y);
-            if (y + 1 < height) {
-                int soulTypeYPlus1 = GetSoulTypeOnPosition(x + 1, y + 1);
-                if (soulTypeXPlus2 == soulType && soulTypeYPlus1 == soulType) {
-                    return true;
-                }
-            }
-            if (y - 1 >= 0) {
-                int soulTypeYMinus1 = GetSoulTypeOnPosition(x + 1, y - 1);
-                if (soulTypeXPlus2 == soulType && soulTypeYMinus1 == soulType) {
-                    return true;
-                }
-            }
+    private int[][] instantiateArray() {
+        int[][] reflectedGrid = new int[width][];
+        for (int i = 0; i < width; i++) {
+            reflectedGrid[i] = new int[height];
         }
-        return false;
-    }
-
-    private bool CompareSideGridsVertical(int x, int y, int soulType) {
-        if (y + 2 < height) {
-            int soulTypeXPlus2 = GetSoulTypeOnPosition(x, y + 2);
-            if (x + 1 < height) {
-                int soulTypeYPlus1 = GetSoulTypeOnPosition(x + 1, y + 1);
-                if (soulTypeXPlus2 == soulType && soulTypeYPlus1 == soulType) {
-                    return true;
-                }
-            }
-            if (x -1 >= 0) {
-                int soulTypeYMinus1 = GetSoulTypeOnPosition(x - 1, y + 1);
-                if (soulTypeXPlus2 == soulType && soulTypeYMinus1 == soulType) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private bool CompareNextTwoGridsHorizontal(int x, int y, int soulType) {
-        if (x + 3 < width) {
-            int soulTypeXPlus1 = GetSoulTypeOnPosition(x + 1, y);
-            int soulTypeXPlus2 = GetSoulTypeOnPosition(x + 2, y);
-            int soulTypeXPlus3 = GetSoulTypeOnPosition(x + 3, y);
-            if ((soulTypeXPlus2 == soulType && soulTypeXPlus3 == soulType) || (soulTypeXPlus1 == soulType && soulTypeXPlus3 == soulType)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private bool CompareNextTwoGridsVertical(int x, int y, int soulType) {
-        if (y + 3 < height) {
-            int soulTypeYPlus1 = GetSoulTypeOnPosition(x, y + 1);
-            int soulTypeYPlus2 = GetSoulTypeOnPosition(x, y + 2);
-            int soulTypeYPlus3 = GetSoulTypeOnPosition(x, y + 3);
-            if ((soulTypeYPlus2 == soulType && soulTypeYPlus3 == soulType) || (soulTypeYPlus1 == soulType && soulTypeYPlus3 == soulType)) {
-                return true;
-            }
-        }
-        return false;
+        return reflectedGrid;
     }
 
     private int GetSoulTypeOnPosition(int x, int y) {
@@ -104,7 +52,9 @@ public class GridManager {
         return NO_SOUL;
     }
 
-    /*MIX THE GRID*/
+    public bool DoesAreAnyMovesInGame() {
+        return reflectedArray.DoesAreAnyMovesInGame();
+    }
 
     public void MixTheArray() {
         List<GameObject> soulsList = new List<GameObject>();
@@ -145,104 +95,18 @@ public class GridManager {
         soul.setTargetPosition(parent.transform.position, 1f);
     }
 
-    /*FIND AND DESTROY MACHES*/
-
-    public List<GameObject> DestroyALlMachingSouls() {
-        List<GameObject> soulsToDestroy = new List<GameObject>();
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                if (soulsGrid[x][y].transform.childCount > 0) {
-                    List<GameObject> temporaryList = DestroyAllMachingSoulForGridPosition(soulsGrid[x][y]);
-                    foreach(GameObject gameObject in temporaryList) {
-                        if (!soulsToDestroy.Contains(gameObject)) {
-                            soulsToDestroy.Add(gameObject);
-                        }
-                    }
-                }
-            }
+    public List<GameObject> GetAllMachingSouls() {
+        List<Position> positionList = reflectedArray.GetAllMachingSouls();
+        List<GameObject> objectToDestroy = new List<GameObject>();
+        foreach(Position position in positionList) {
+            objectToDestroy.Add(soulsGrid[position.getX()][position.getY()].transform.GetChild(0).gameObject);
         }
-        return soulsToDestroy;
+        return objectToDestroy;
     }
-
-    public List<GameObject> DestroyAllMachingSoulForGridPosition(GameObject gridObject) {
-        List<GameObject> soulsToDestroy = new List<GameObject>();
-        int x = (int)gridObject.transform.localPosition.x;
-        int y = (int)gridObject.transform.localPosition.y;
-        int soulType = gridObject.transform.GetChild(0).GetComponent<Soul>().getSoulType();
-        List<GameObject> verticalList = GetVerticalMachesList(x, y, soulType);
-        List<GameObject> horizontalList = GetHorizontalMachesList(x, y, soulType);
-
-        if (verticalList.Count >= 2 || horizontalList.Count >= 2) {
-            soulsToDestroy.Add(gridObject.transform.GetChild(0).gameObject);
-        }
-
-        if (verticalList.Count >= 2) {
-            for (int i = 0; i < verticalList.Count; i++) {
-                soulsToDestroy.Add(gridObject.transform.GetChild(0).gameObject);
-            }
-        }
-
-        if (horizontalList.Count >= 2) {
-            for (int i = 0; i < horizontalList.Count; i++) {
-                soulsToDestroy.Add(gridObject.transform.GetChild(0).gameObject);
-            }
-        }
-        return soulsToDestroy;
-    }
-
-    private List<GameObject> GetHorizontalMachesList(int x, int y, int soulType) {
-        int originalY = y;
-        List<GameObject> list = new List<GameObject>();
-        y++;
-        while (y < height) {
-            if (soulType == GetSoulTypeOnPosition(x, y)) {
-                list.Add(soulsGrid[x][y]);
-            } else {
-                break;
-            }
-            y++;
-        }
-        originalY--;
-        while (originalY >= 0) {
-            if (soulType == GetSoulTypeOnPosition(x, originalY)) {
-                list.Add(soulsGrid[x][originalY]);
-            } else {
-                break;
-            }
-            originalY--;
-        }
-        return list;
-    }
-
-    private List<GameObject> GetVerticalMachesList(int x, int y, int soulType) {
-        int originalX = x;
-        List<GameObject> list = new List<GameObject>();
-        x++;
-        while (x < width) {
-            if (soulType == GetSoulTypeOnPosition(x, y)) {
-                list.Add(soulsGrid[x][y]);
-            } else {
-                break;
-            }
-            x++;
-        }
-        originalX--;
-        while (originalX >= 0) {
-            if (soulType == GetSoulTypeOnPosition(originalX, y)) {
-                list.Add(soulsGrid[originalX][y]);
-            } else {
-                break;
-            }
-            originalX--;
-        }
-        return list;
-    }
-
 
     /*DRAG SOULS DOWN AND FILL EMPTY*/
 
     public void DragSoulsDown() {
-        //Debug.Log("Drag start");
         for (int x = 0; x < width; x++) {
             SearchForFirstExistingSoulInY(x, 0);
         }
@@ -261,7 +125,7 @@ public class GridManager {
                     SearchForFirstExistingSoulInY(positionX, positionY + 1);
                 }
             } else {
-                gameGrid.InstantiateSoulOnPosition(positionX, positionY);
+                soulCreator.InstantiateRandomSoulOnPosition(soulsGrid[positionX][positionY]);
                 FillAllAbove(positionX, positionY + 1);
             }
         } else {
@@ -285,11 +149,20 @@ public class GridManager {
 
     private void FillAllAbove(int positionX, int positionY) {
         for (int y = positionY; y < height; y++) {
-            gameGrid.InstantiateSoulOnPosition(positionX, y);
+            soulCreator.InstantiateRandomSoulOnPosition(soulsGrid[positionX][y]);
         }
     }
 
     /*ADDITIONALS*/
+
+    public void GetStartGrid() {
+        int[][] soulsArray = reflectedArray.getReflectedArray();
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                soulCreator.InstantiateSoulOnPosition(soulsGrid[x][y], soulsArray[x][y]);
+            }
+        }
+    }
 
     public bool DoesAnySoulMove() {
         for (int x = 0; x < width; x++) {
