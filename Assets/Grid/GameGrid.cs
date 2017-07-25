@@ -25,7 +25,6 @@ public class GameGrid : MonoBehaviour {
         audioSource = GetComponent<AudioSource>();
         movesAndScores = FindObjectOfType<MovesAndScores>();
         soulListToDestroy = new List<GameObject>();
-        soulsGrid = new GameObject[width][];
         InstantiateAllGrids();
         CenterTheGrid();
         gridManager = new GridManager(soulsGrid, soulCreator);
@@ -84,6 +83,7 @@ public class GameGrid : MonoBehaviour {
     }
 
     private void InstantiateAllGrids() {
+        soulsGrid = new GameObject[width][];
         for (int x = 0; x < width; x++) {
             soulsGrid[x] = new GameObject[height];
             for (int y = 0; y < height; y++) {

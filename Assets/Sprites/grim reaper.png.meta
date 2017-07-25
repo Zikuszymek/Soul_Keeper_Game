@@ -1,6 +1,6 @@
 fileFormatVersion: 2
 guid: ab9987a947c41694189bd85d404fd32c
-timeCreated: 1499988777
+timeCreated: 1500996211
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
@@ -157,9 +157,9 @@ TextureImporter:
       name: grim reaper_4
       rect:
         serializedVersion: 2
-        x: 170
-        y: 184
-        width: 76
+        x: 169
+        y: 162
+        width: 77
         height: 92
       alignment: 0
       pivot: {x: 0, y: 0}
